@@ -1,16 +1,16 @@
 <template>
   {{ userId }}
-  <HelloWorld :userId="userId"/>
+  <Stream :userId="userId"/>
 </template>
 
 <script>
 import { v4 as uuidv4 } from 'uuid';
-import HelloWorld from './components/HelloWorld.vue'
+import Stream from './components/Stream.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    Stream
   },
   data: () => ({
     userId: null

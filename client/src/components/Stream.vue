@@ -10,11 +10,11 @@
 import socket from '@/socketIO.js'
 import { Peer } from "peerjs";
 
-console.log(socket, 123)
+console.log(socket)
 let peer = new Peer();
 
 export default {
-  name: 'HelloWorld',
+  name: 'StreamComponent',
   props: {
     userId: String
   },
@@ -45,10 +45,6 @@ export default {
       }).then(stream => {
         let video = document.createElement('video');
         this.appendVideoStream(video, stream)
-        
-        
-        
-        
         
 
 
