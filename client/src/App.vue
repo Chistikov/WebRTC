@@ -1,6 +1,6 @@
 <template>
-  {{ userId }}
-  <Stream :userId="userId"/>
+  <!-- {{ userId }} -->
+  <!-- <Stream :userId="userId"/> -->
   <router-link to="/">preview</router-link>
   <router-link to="/video">video</router-link>
   <router-view/>
@@ -8,12 +8,12 @@
 
 <script>
 import { v4 as uuidv4 } from 'uuid';
-import Stream from './components/Stream.vue'
+// import Stream from './components/Stream.vue'
 
 export default {
   name: 'App',
   components: {
-    Stream
+    // Stream
   },
   data: () => ({
     userId: null
@@ -26,12 +26,16 @@ export default {
 </script>
 
 <style>
+body {
+  padding: 0;
+  margin: 0;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  background: #1C293D;
 }
 </style>
