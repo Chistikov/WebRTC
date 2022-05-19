@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import PreviewPage from "@/pages/PreviewPage";
 
 const routes = [
-  { path: "/", component: PreviewPage },
-  { path: "/video", component: import("@/pages/VideoPage") },
+  { path: "/preview/:peerId", component: PreviewPage },
+  { path: "/video/:peerId", component: import("@/pages/VideoPage") },
 ];
 
 export const router = createRouter({

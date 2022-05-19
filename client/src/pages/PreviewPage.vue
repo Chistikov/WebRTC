@@ -1,6 +1,11 @@
 <template>
   <div class="wrapper">
+    
     <div class="centerred-content">
+      <div class="peer-title">Урок Математика</div>
+      <div class="peer-metadata">{{ `Начало: 23 марта 2022 16:00. Продолжительность урока: 1 час.` }}</div>
+      
+      {{ $route.params.peerId }}
       <div class="video-container">
         <video src="" class="video" ref="video"></video>
         <div v-if="isVideoForbidden" class="video-overflow">Видео запрещено.<br>Предоставьте разрешение на камеру и микровон в браузере<br>и презагрузите страницу.</div>
@@ -10,7 +15,7 @@
           <button :class="[controls.video ? 'button--green' : 'button--red']" @click="toggleVideo">video</button>
           <button :class="[controls.audio ? 'button--green' : 'button--red']" @click="toggleAudio">audio</button>
         </div>
-        <button class="connect-btn">connect</button>
+        <button class="connect-btn" @click="connectHandler()">connect</button>
       </div>
     </div>
   </div>
@@ -60,8 +65,13 @@ export default {
       } else {
         this.isVideoForbidden = false;
       }
+    },
+    connectHandler() {
+      if (this.$route?.params?.peerId) {
+        this.$router.push(`/video/${this.$route.params.peerId}`)
+      }
     }
-  }
+  },
 }
 </script>
 
@@ -70,13 +80,22 @@ export default {
 .wrapper {
   background: #1C293D;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   flex-grow: 1;
   height: 100vh;
 }
 
-
+.peer-title {
+  color: #fff;
+  font-size: 20px;
+}
+.peer-metadata {
+  font-size: 16px;
+  color: #ffffff88;
+  margin-bottom: 20px;
+}
 .video-container {
   position: relative;
   border-radius: 10px;
