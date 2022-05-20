@@ -68,7 +68,7 @@ export default {
     },
     connectHandler() {
       if (this.$route?.params?.peerId) {
-        this.$router.push(`/video/${this.$route.params.peerId}`)
+        this.$router.push(`/video/${this.$route.params.userId}/${this.$route.params.peerId}`)
       }
     }
   },

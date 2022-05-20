@@ -11,7 +11,8 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   socket.on('JOIN_ROOM', ({roomId, userId}) => {
-    console.log(roomId, userId)
+    // socket.emit('TTT', userId)
+    console.log(`roomId: ${roomId}  /  userId: ${userId}`)
     socket.join(roomId)
     socket.to(roomId).emit('USER_CONNECTED', userId)
 

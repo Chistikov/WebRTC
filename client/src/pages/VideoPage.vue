@@ -3,15 +3,10 @@
     <div class="header">
       <div>Mатематика (групповое занятие)</div>
       {{ `peerId: ${this.$route.params.peerId}` }}
+      {{ `userId: ${this.$route.params.userId}` }}
       <div>10:40</div>
     </div>
-    <main class="videos-container">
-      <div class="video-wrapper">
-        <video src="" class="video"></video>
-      </div>
-      <div class="video-wrapper">
-        <video src="" class="video"></video>
-      </div>
+    <main class="videos-container" ref="videosContainer">
     </main>
     <div class="footer">
       <button class="button button--disconnect">завершить звонок</button>
@@ -20,7 +15,154 @@
 </template>
 
 <script>
-export default {}
+import socket from '@/socketIO.js'
+import {Peer} from "peerjs";
+
+let peer;
+console.log(socket, peer)
+
+export default {
+  name: "VideoPage",
+  data: () => ({
+    
+  }),
+  async mounted() {
+    socket.on('TTT', id => alert(id))
+    // console.log('userId ', this.$route.params.userId)
+    // console.log('peerId ', this.$route.params.peerId)
+
+    peer = new Peer(this.$route.params.peerId);
+    console.log(peer);
+
+    // let stream = null;
+    // let constraints = {
+    //   video: true,
+    //   audio: true,
+    // };
+
+
+    peer.on('open', peerId => {
+      console.log('My peer ID is: ' + peerId);
+      socket.emit(
+        "JOIN_ROOM",
+        {roomId: peerId, userId: this.$route.params.userId}
+      )
+    })
+
+    navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    }).then(stream => {
+      let video = document.createElement('video');
+      this.appendVideoStream(video, stream)
+
+      peer.on('call', call => {
+        alert('кто-то звонит')
+        call.answer(stream) // отвечаем и передаем наше видео
+
+        // получаем видео поток от абонента и транслируем его в video
+        let video = document.createElement('video');
+        call.on('stream', userVideoStream => {
+          this.appendVideoStream(video, userVideoStream)
+        })
+      })
+
+
+      // connect new user
+      socket.on("USER_CONNECTED", userId => {
+        alert('user connected')
+        console.log('USER_CONNECTED', userId);
+
+        // создать исходящий звонок
+        const call = peer.call(userId, stream)
+        console.log('call', call);
+        let video = document.createElement('video');
+        call.on('stream', userVideoStream => {
+          this.appendVideoStream(video, userVideoStream)
+        })
+        call.on('close', () => {video.remove()})
+        this.peer[userId] = call;
+      })
+
+      socket.on('USER_DISCONNECTED', (userId) => {
+        if (this.peer[userId]) {
+          this.peer[userId].close()
+        }
+      })
+      
+    })
+
+    
+
+    // try {
+    //   stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    //   // демонстрация видео его же владельцу
+    //   let video = document.createElement('video');
+    //   this.addpedVideoStream(video, stream);
+
+    //   peer.on('call', call => {
+    //     call.answer(stream)
+    //     let video = document.createElement('video');
+    //     call.on('stream', userVideoStream => {
+    //       this.appendVideoStream(video, userVideoStream)
+    //     })
+    //   })
+
+    //   // connect new user
+    //   socket.on("USER_CONNECTED", userId => {
+    //     console.log('USER_CONNECTED', userId);
+
+    //     const call = peer.call(userId, stream)
+    //     console.log('call', call);
+    //     let video = document.createElement('video');
+    //     call.on('stream', userVideoStream => {
+    //       this.appendVideoStream(video, userVideoStream)
+    //     })
+    //     call.on('close', () => {video.remove()})
+    //     this.peer[userId] = call;
+    //   })
+      
+    // } catch(err) {
+    //   console.error(err)
+    //   alert('Ошибка при установке видео потока.')
+    // }
+
+    
+
+    
+
+    
+
+    // socket.on('USER_DISCONNECTED', (userId) => {
+    //   if (this.peer[userId]) {
+    //     this.peer[userId].close()
+    //   }
+    // })
+
+    // peer.on('open', id => {
+    //   console.log(id);
+    //   socket.emit("JOIN_ROOM", {roomId: "1", userId: id})
+    // })
+    
+
+
+  },
+  methods: {
+    appendVideoStream(video, stream) {
+      let videoWrapper = document.createElement('div');
+      videoWrapper.classList.add('video-wrapper');
+      video.muted = true;
+      video.classList.add('video');
+      video.srcObject = stream;
+      video.addEventListener('loadedmetadata', () => {
+        video.play()
+      })
+      videoWrapper.appendChild(video);
+      this.$refs.videosContainer.appendChild(videoWrapper)
+    }
+  },
+}
 </script>
 
 
@@ -56,6 +198,26 @@ export default {}
   flex-wrap: wrap;
   align-content: center;
 }
+
+.button {
+  height: 40px;
+  width: 40px;
+  border: 0;
+  background: #1C293C;
+  border-radius: 20px;
+}
+
+.button--disconnect {
+  height: 40px;
+  width: auto;
+  padding: 0 20px;
+  color: #fff;
+  background: rgb(227, 55, 45);
+  font-size: 16px;
+}
+</style>
+
+<style>
 .video-wrapper {
   /* min-width: 300px;
   max-width: 600px; */
@@ -75,22 +237,6 @@ export default {}
 
 .video {
 
-}
-.button {
-  height: 40px;
-  width: 40px;
-  border: 0;
-  background: #1C293C;
-  border-radius: 20px;
-}
-
-.button--disconnect {
-  height: 40px;
-  width: auto;
-  padding: 0 20px;
-  color: #fff;
-  background: rgb(227, 55, 45);
-  font-size: 16px;
 }
 </style>
 
