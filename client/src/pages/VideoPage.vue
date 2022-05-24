@@ -2,7 +2,7 @@
   <div class="wrapper">
     <div class="header">
       <div>Mатематика (групповое занятие)</div>
-      {{ `peerId: ${this.$route.params.peerId}` }}
+      {{ `roomId: ${this.$route.params.roomId}` }}
       {{ `userId: ${this.$route.params.userId}` }}
       <div>10:40</div>
     </div>
@@ -16,27 +16,32 @@
 </template>
 
 <script>
-import socket from '@/socketIO.js'
+import socket from "@/socketIO.js";
 import { Peer } from "peerjs";
 
-console.log(socket)
+console.log(socket);
 let peer;
 
 export default {
-  name: 'StreamComponent',
+  name: "StreamComponent",
   props: {
-    userId: String
+    userId: String,
   },
   data: () => ({
-    peer: {}
+    peer: {},
   }),
   mounted() {
     function initPeer() {
+      // сюда можно передать id пользователя
       peer = new Peer();
-      peer.on('open', id => {
-          console.log(id);
-          socket.emit("JOIN_ROOM", {roomId: "1", userId: id})
-        })
+      peer.on("open", (id) => {
+        console.log(id);
+        console.log("TTT", this.$route.params.roomId);
+        socket.emit("JOIN_ROOM", {
+          roomId: this.$route.params.roomId,
+          userId: id,
+        });
+      });
       // socket.on("connect", (socket) => {
       //   console.log(socket)
       //   console.log("connect", socket.id); // x8WIv7-mJelg7on_ALbx
@@ -46,7 +51,7 @@ export default {
       //     console.log(data)
       // })
       this.$nextTick(() => {
-        console.log('tick', this.userId);
+        console.log("tick", this.userId);
 
         // socket.emit("JOIN_ROOM", {roomId: "1", userId: this.userId})
 
@@ -54,54 +59,52 @@ export default {
         //   console.log('USER_CONNECTED', userId);
         // })
 
-        navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        }).then(stream => {
-          let video = document.createElement('video');
-          this.appendVideoStream(video, stream)
-          
-
-
-          peer.on('call', call => {
-            console.log('call', call);
-            call.answer(stream)
-            let video = document.createElement('video');
-            call.on('stream', userVideoStream => {
-              this.appendVideoStream(video, userVideoStream)
-            })
+        navigator.mediaDevices
+          .getUserMedia({
+            video: true,
+            audio: true,
           })
+          .then((stream) => {
+            let video = document.createElement("video");
+            this.appendVideoStream(video, stream);
 
+            peer.on("call", (call) => {
+              console.log("call", call);
+              call.answer(stream);
+              let video = document.createElement("video");
+              call.on("stream", (userVideoStream) => {
+                this.appendVideoStream(video, userVideoStream);
+              });
+            });
 
-          // connect new user
-          socket.on("USER_CONNECTED", userId => {
-            console.log('USER_CONNECTED', userId);
+            // connect new user
+            socket.on("USER_CONNECTED", (userId) => {
+              console.log("USER_CONNECTED", userId);
 
-            const call = peer.call(userId, stream)
-            console.log('call', call);
-            let video = document.createElement('video');
-            call.on('stream', userVideoStream => {
-              this.appendVideoStream(video, userVideoStream)
-            })
-            call.on('close', () => {video.remove()})
-            this.peer[userId] = call;
-          })
+              const call = peer.call(userId, stream);
+              console.log("call", call);
+              let video = document.createElement("video");
+              call.on("stream", (userVideoStream) => {
+                this.appendVideoStream(video, userVideoStream);
+              });
+              call.on("close", () => {
+                video.remove();
+              });
+              this.peer[userId] = call;
+            });
 
-          socket.on('USER_DISCONNECTED', (userId) => {
-            if (this.peer[userId]) {
-              console.log('lll', this.peer[userId]);
-              this.peer[userId].close()
-            }
-          })
-          
-        })
-
-        
-      })
+            socket.on("USER_DISCONNECTED", (userId) => {
+              if (this.peer[userId]) {
+                console.log("lll", this.peer[userId]);
+                this.peer[userId].close();
+              }
+            });
+          });
+      });
     }
 
     setTimeout(initPeer.bind(this), 1000);
-    
+
     // eslint-disable-next-line no-undef
     // console.log(Peer)
   },
@@ -121,33 +124,28 @@ export default {
     //   }
     // },
     appendVideoStream(video, stream) {
-      video.muted = true
-      video.classList.add("video")
+      video.muted = true;
+      video.classList.add("video");
       video.srcObject = stream;
-      video.addEventListener('loadedmetadata', () => {
+      video.addEventListener("loadedmetadata", () => {
         video.play();
-      })
-      this.$refs.videosContainer.appendChild(video)
+      });
+      this.$refs.videosContainer.appendChild(video);
     },
     leave() {
-      console.log('leave');
-      socket.emit('leave', socket.id)
+      console.log("leave");
+      socket.emit("leave", socket.id);
       // socket.on("disconnect", () => {
       //   console.log("disconnect", socket.id); // x8WIv7-mJelg7on_ALbx
       // });
-    }
+    },
   },
   unmounted() {
     socket.on("disconnect", () => {
       console.log("disconnect", socket.id); // x8WIv7-mJelg7on_ALbx
     });
-  }
-}
-
-
-
-
-
+  },
+};
 
 // import socket from '@/socketIO.js'
 // import {Peer} from "peerjs";
@@ -158,7 +156,7 @@ export default {
 // export default {
 //   name: "VideoPage",
 //   data: () => ({
-    
+
 //   }),
 //   async mounted() {
 //     socket.on('TTT', id => alert(id))
@@ -173,7 +171,6 @@ export default {
 //     //   video: true,
 //     //   audio: true,
 //     // };
-
 
 //     peer.on('open', peerId => {
 //       console.log('My peer ID is: ' + peerId);
@@ -201,7 +198,6 @@ export default {
 //         })
 //       })
 
-
 //       // connect new user
 //       socket.on("USER_CONNECTED", userId => {
 //         alert('user connected')
@@ -223,10 +219,8 @@ export default {
 //           this.peer[userId].close()
 //         }
 //       })
-      
-//     })
 
-    
+//     })
 
 //     // try {
 //     //   stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -256,17 +250,11 @@ export default {
 //     //     call.on('close', () => {video.remove()})
 //     //     this.peer[userId] = call;
 //     //   })
-      
+
 //     // } catch(err) {
 //     //   console.error(err)
 //     //   alert('Ошибка при установке видео потока.')
 //     // }
-
-    
-
-    
-
-    
 
 //     // socket.on('USER_DISCONNECTED', (userId) => {
 //     //   if (this.peer[userId]) {
@@ -278,8 +266,6 @@ export default {
 //     //   console.log(id);
 //     //   socket.emit("JOIN_ROOM", {roomId: "1", userId: id})
 //     // })
-    
-
 
 //   },
 //   methods: {
@@ -337,7 +323,7 @@ export default {
   height: 40px;
   width: 40px;
   border: 0;
-  background: #1C293C;
+  background: #1c293c;
   border-radius: 20px;
 }
 
