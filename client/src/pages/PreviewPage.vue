@@ -67,8 +67,10 @@ export default {
       }
     },
     connectHandler() {
-      if (this.$route?.params?.peerId) {
-        this.$router.push(`/video/${this.$route.params.userId}/${this.$route.params.peerId}`)
+      console.log(this.$route)
+      if (this.$route?.params?.roomId) {
+        alert()
+        this.$router.push(`/video/${this.$route.params.userId}/${this.$route.params.roomId}`)
       }
     }
   },

@@ -4,7 +4,7 @@ import VideoPage from "@/pages/VideoPage";
 // import Stream from "@/components/Stream";
 
 const routes = [
-  { path: "/preview/:userId/:rooomId", name: 'preview', component: PreviewPage },
+  { path: "/preview/:userId/:roomId", name: 'preview', component: PreviewPage },
   { path: "/video/:userId/:roomId", name: 'video', component: VideoPage},
 ];
 
