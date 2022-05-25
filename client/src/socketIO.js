@@ -5,7 +5,9 @@ const options = {
   timeout: 10000,
   transports: ['websocket']
 }
-const socket = io("http://localhost:3000/", options);
+const {VUE_APP_SERVER_URL} = process.env
+
+const socket = io(VUE_APP_SERVER_URL, options);
 console.log(socket);
 
 export default socket
