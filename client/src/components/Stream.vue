@@ -78,7 +78,7 @@ export default {
   },
   methods: {
     appendVideoStream(video, stream) {
-      video.muted = true
+      video.muted = false
       video.classList.add("video")
       video.srcObject = stream;
       video.addEventListener('loadedmetadata', () => {
