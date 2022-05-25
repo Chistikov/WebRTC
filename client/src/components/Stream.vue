@@ -27,27 +27,17 @@ export default {
     //   console.log("connect", socket.id); // x8WIv7-mJelg7on_ALbx
     // });
 
-    // socket.on('test_msg', data => {
-    //     console.log(data)
-    // })
     this.$nextTick(() => {
-      console.log('tick', this.userId);
-
-      // socket.emit("JOIN_ROOM", {roomId: "1", userId: this.userId})
-
-      // socket.on("USER_CONNECTED", userId => {
-      //   console.log('USER_CONNECTED', userId);
-      // })
-
       navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       }).then(stream => {
+        // локальная трансляция видео
         let video = document.createElement('video');
         this.appendVideoStream(video, stream)
-        
 
 
+        //  обработчик при звонке
         peer.on('call', call => {
           call.answer(stream)
           let video = document.createElement('video');
@@ -56,11 +46,11 @@ export default {
           })
         })
 
-
         // connect new user
         socket.on("USER_CONNECTED", userId => {
           console.log('USER_CONNECTED', userId);
 
+          // звонок абоненту + передача своего видео потока
           const call = peer.call(userId, stream)
           console.log('call', call);
           let video = document.createElement('video');
@@ -79,14 +69,12 @@ export default {
         
       })
 
-      peer.on('open', id => {
-        console.log(id);
-        socket.emit("JOIN_ROOM", {roomId: "1", userId: id})
-      })
+      // peer.on('open', id => {
+      //   alert()
+      //   console.log('test', id);
+      //   socket.emit("JOIN_ROOM", {roomId: "1", userId: id})
+      // })
     })
-    
-    // eslint-disable-next-line no-undef
-    // console.log(Peer)
   },
   methods: {
     appendVideoStream(video, stream) {
@@ -98,18 +86,19 @@ export default {
       })
       this.$refs.video_container.appendChild(video)
     },
-    leave() {
-      console.log('leave');
-      socket.emit('leave', socket.id)
-      // socket.on("disconnect", () => {
-      //   console.log("disconnect", socket.id); // x8WIv7-mJelg7on_ALbx
-      // });
-    }
+    // leave() {
+    //   alert()
+    //   console.log('leave');
+    //   socket.emit('leave', socket.id)
+    //   // socket.on("disconnect", () => {
+    //   //   console.log("disconnect", socket.id); // x8WIv7-mJelg7on_ALbx
+    //   // });
+    // }
   },
   unmounted() {
-    socket.on("disconnect", () => {
-      console.log("disconnect", socket.id); // x8WIv7-mJelg7on_ALbx
-    });
+    // socket.on("disconnect", () => {
+    //   console.log("disconnect", socket.id); // x8WIv7-mJelg7on_ALbx
+    // });
   }
 }
 </script>
