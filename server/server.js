@@ -10,13 +10,15 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  socket.on('JOIN_ROOM', ({roomId, userId}) => {
-    console.log(`roomId: ${roomId}  /  userId: ${userId}`)
+  console.log('socket connected')
+  socket.on('JOIN_ROOM', ({roomId, userId, connectionId}) => {
+    console.log(`roomId: ${roomId}  /  userId: ${userId} / connectionId: ${connectionId}`)
     socket.join(roomId)
-    socket.to(roomId).emit('USER_CONNECTED', userId)
+    socket.to(roomId).emit('USER_CONNECTED', connectionId)
 
     socket.on("disconnect", () => {
-      socket.to(roomId).emit("USER_DISCONNECTED", userId)
+      console.log('user dic: ', connectionId)
+      socket.to(roomId).emit("USER_DISCONNECTED", connectionId)
     })
   })
 });
