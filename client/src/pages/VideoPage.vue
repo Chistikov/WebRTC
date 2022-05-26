@@ -7,6 +7,7 @@
       <div>10:40</div>
     </div>
     <main class="videos-container" ref="videosContainer">
+      <video src="" ref="myMediaStream" style="max-width: calc(100% - 100px)"></video>
       <!-- <Stream :userId="$route.params.userId"></Stream> -->
     </main>
     <div class="footer">
@@ -29,125 +30,59 @@ export default {
   },
   data: () => ({
     myPeer: null,
-    connectionId: null,
-    connectedPeers: {},
-    defaultVideoStream: null,
-    cameraStream: null,
-    screenStream: null
+    myDefaultMediaStream: null,
+    myVideoStream: null,
+    myScreenStream: null,
   }),
-  mounted() {
-    this.myPeer = new Peer();
+  async mounted() {
+    this.myPeer = new Peer()
+    this.myPeer.on('open', this.openPeerHandler)
+    socket.on("NEW_USER_CONNECTED", this.newUserHandler)
 
-    this.myPeer.on('open', async myConnectionId => {
-      this.connectionId = myConnectionId;
-      console.log("MY CONNECTION ID:: " + myConnectionId)
-
+    this.myVideoStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    })
+    this.myDefaultMediaStream = this.myVideoStream;
+    
+  },
+  methods: {
+    openPeerHandler(connectionId) {
       socket.emit("JOIN_ROOM", {
         roomId: this.$route.params.roomId,
         userId: this.$route.params.userId,
-        connectionId: myConnectionId
+        connectionId: connectionId,
       })
-
-      this.cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      })
-      this.defaultVideoStream = this.cameraStream;
-
-      // При звонке отправляем наш поток видео обратно
-      this.myPeer.on('call', call => {
-        call.answer(this.defaultVideoStream)
-        
-        // установка видео, которое приходит от входящего звонка
-        const userVideo = document.createElement("video")
-        call.on('stream', userVideoSream => {
-          this.appendVideoStream(userVideo, userVideoSream)
-        })
-      })
-
-
-      // Добавление моего видео
-      let myVideo = document.createElement("video");
-      this.appendVideoStream(myVideo, this.defaultVideoStream);
-
-
-      // Присоединение других пользователй к себе
-      socket.on('USER_CONNECTED', newUserConnectionId => {
-        console.log('new user connected: ' + newUserConnectionId)
-        this.connectToNewUser(newUserConnectionId, this.defaultVideoStream)
-      })
-
-      // socket.on('STREAMING_VIDEO', streamerConnectionId => {
-      //   console.log(`user ${streamerConnectionId} started sharing screen`);
-      // })
-    }),
-
-    // закрытие подключения с отключенным пользователем
-    socket.on("USER_DISCONNECTED", userConnectionId => {
-      console.log('USER DISCONNECTED:', userConnectionId)
-      if (this.connectedPeers[userConnectionId]) {
-        this.connectedPeers[userConnectionId].close();
-        delete this.connectedPeers[userConnectionId]
-        const elForDelete = document.querySelector(`#${userConnectionId}`);
-        if (elForDelete) {
-          elForDelete.remove();
-        }
-      }
-    })
-  },
-  methods: {
-    appendVideoStream(video, stream) {
-      video.muted = true;
-      video.classList.add("video");
-      video.srcObject = stream;
-      video.addEventListener("loadedmetadata", () => {
-        video.play();
-      });
-      this.$refs.videosContainer.appendChild(video);
     },
-    connectToNewUser(newUserConnectionId, myVideoStream) {
-      console.log(newUserConnectionId, myVideoStream)
-      // з воним пользователю и передаем наше видео
-      const call = this.myPeer.call(newUserConnectionId, myVideoStream);
-
-      // слушаем поток видое от другого пользователя и устанавливаем его в video
-      const userVideo = document.createElement("video")
-      userVideo.setAttribute('id', newUserConnectionId);
-      call.on('stream', userVideoStream => {
-        this.appendVideoStream(userVideo, userVideoStream)
-      })
-      // удаляем видео абонента, если соединение закрылось
-      call.on('close', () => {
-        userVideo.remove()
-      })
-
-      // Добавляем в список активных подключений текущее подключение с новым пользователем
-      this.connectedPeers[newUserConnectionId] = call;
+    newUserHandler(newUserConnectionId) {
+      console.log('New user connected:', newUserConnectionId)
     },
     async shareScreenHandler() {
-      this.screenStream = await navigator.mediaDevices.getDisplayMedia()
-      this.defaultVideoStream = this.screenStream;
-
-      this.screenStream.getVideoTracks()[0].onended = function () {
-        alert()
-        this.defaultVideoStream = this.cameraStream
-        // doWhatYouNeedToDo();
-      };
-
-      const mySheredScrenVideo = document.createElement('video');
-      this.appendVideoStream(mySheredScrenVideo, this.defaultVideoStream)
-      // socket.emit('SHARING_SCREEN', {
-      //   connectionId: this.connectionId,
-      //   userId: this.$route.params.userId,
-      //   roomId: this.$route.params.roomId,
-      // })
-      // const stream = myPeer.video(newUserConnectionId, mySharedScreenStream);
-      // myPeer.call(adminId, mySharedScreenStream);
-      this.myPeer.on('call', call => {
-        console.log("on call")
-        call.answer(this.defaultVideoStream)
-      });
+      this.myScreenStream = await navigator.mediaDevices.getDisplayMedia()
+      this.myDefaultMediaStream =  this.myScreenStream;
+      // обработчик прекращения демонстрации
+      this.myScreenStream.getVideoTracks()[0].onended = this.stopScreenStreamingHandler;
+    },
+    stopScreenStreamingHandler() {
+      console.log('Демонстарция экрана остановелна')
+      this.myDefaultMediaStream = this.myVideoStream
+      this.myScreenStream = null
     }
+  },
+  watch: {
+    myDefaultMediaStream: {
+      handler(newStream) {
+        console.log("Source of media stream canged")
+
+        // this.$refs.myMediaStream.muted = true;
+        this.$refs.myMediaStream.srcObject = newStream;
+        this.$refs.myMediaStream.addEventListener("loadedmetadata", () => {
+          this.$refs.myMediaStream.play();
+        });
+      },
+      deep: true
+    }
+    
   }
 };
 </script>
