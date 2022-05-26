@@ -17,6 +17,10 @@ io.on('connection', (socket) => {
       socket.to(roomId).emit("USER_DISCONNECTED", connectionId)
     })
   })
+  socket.on('SHARING_SCREEN', ({roomId, userId, connectionId}) => {
+    console.log('user started sharing screen:', connectionId)
+    socket.to(roomId).emit("STREAMING_VIDEO", connectionId)
+  })
 });
 
 server.listen(3000, () => {

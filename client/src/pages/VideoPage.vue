@@ -11,6 +11,7 @@
     </main>
     <div class="footer">
       <button class="button button--disconnect">завершить звонок</button>
+      <button class="button button--screen-share" @click="shareScreenHandler">Демонстрация экрана</button>
     </div>
   </div>
 </template>
@@ -20,7 +21,6 @@ import socket from "@/socketIO.js";
 import { Peer } from "peerjs";
 
 console.log(socket);
-let myPeer;
 
 export default {
   name: "StreamComponent",
@@ -28,12 +28,18 @@ export default {
     userId: String,
   },
   data: () => ({
+    myPeer: null,
+    connectionId: null,
     connectedPeers: {},
+    defaultVideoStream: null,
+    cameraStream: null,
+    screenStream: null
   }),
   mounted() {
-    myPeer = new Peer();
+    this.myPeer = new Peer();
 
-    myPeer.on('open', myConnectionId => {
+    this.myPeer.on('open', async myConnectionId => {
+      this.connectionId = myConnectionId;
       console.log("MY CONNECTION ID:: " + myConnectionId)
 
       socket.emit("JOIN_ROOM", {
@@ -42,31 +48,38 @@ export default {
         connectionId: myConnectionId
       })
 
-      navigator.mediaDevices.getUserMedia({
+      this.cameraStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
-      }).then(myVideoStream => {
-        // При звонке отправляем наш поток видео обратно
-        myPeer.on('call', call => {
-          call.answer(myVideoStream)
-          
-          // установка видео, которое приходит от входящего звонка
-          const userVideo = document.createElement("video")
-          call.on('stream', userVideoSream => {
-            this.appendVideoStream(userVideo, userVideoSream)
-          })
-        })
+      })
+      this.defaultVideoStream = this.cameraStream;
 
-        // Добавление моего видео
-        let myVideo = document.createElement("video");
-        this.appendVideoStream(myVideo, myVideoStream);
-
-        // Присоединение других пользователй к себе
-        socket.on('USER_CONNECTED', newUserConnectionId => {
-          console.log('new user connected: ' + newUserConnectionId)
-          this.connectToNewUser(newUserConnectionId, myVideoStream)
+      // При звонке отправляем наш поток видео обратно
+      this.myPeer.on('call', call => {
+        call.answer(this.defaultVideoStream)
+        
+        // установка видео, которое приходит от входящего звонка
+        const userVideo = document.createElement("video")
+        call.on('stream', userVideoSream => {
+          this.appendVideoStream(userVideo, userVideoSream)
         })
       })
+
+
+      // Добавление моего видео
+      let myVideo = document.createElement("video");
+      this.appendVideoStream(myVideo, this.defaultVideoStream);
+
+
+      // Присоединение других пользователй к себе
+      socket.on('USER_CONNECTED', newUserConnectionId => {
+        console.log('new user connected: ' + newUserConnectionId)
+        this.connectToNewUser(newUserConnectionId, this.defaultVideoStream)
+      })
+
+      // socket.on('STREAMING_VIDEO', streamerConnectionId => {
+      //   console.log(`user ${streamerConnectionId} started sharing screen`);
+      // })
     }),
 
     // закрытие подключения с отключенным пользователем
@@ -95,7 +108,7 @@ export default {
     connectToNewUser(newUserConnectionId, myVideoStream) {
       console.log(newUserConnectionId, myVideoStream)
       // з воним пользователю и передаем наше видео
-      const call = myPeer.call(newUserConnectionId, myVideoStream);
+      const call = this.myPeer.call(newUserConnectionId, myVideoStream);
 
       // слушаем поток видое от другого пользователя и устанавливаем его в video
       const userVideo = document.createElement("video")
@@ -110,6 +123,30 @@ export default {
 
       // Добавляем в список активных подключений текущее подключение с новым пользователем
       this.connectedPeers[newUserConnectionId] = call;
+    },
+    async shareScreenHandler() {
+      this.screenStream = await navigator.mediaDevices.getDisplayMedia()
+      this.defaultVideoStream = this.screenStream;
+
+      this.screenStream.getVideoTracks()[0].onended = function () {
+        alert()
+        this.defaultVideoStream = this.cameraStream
+        // doWhatYouNeedToDo();
+      };
+
+      const mySheredScrenVideo = document.createElement('video');
+      this.appendVideoStream(mySheredScrenVideo, this.defaultVideoStream)
+      // socket.emit('SHARING_SCREEN', {
+      //   connectionId: this.connectionId,
+      //   userId: this.$route.params.userId,
+      //   roomId: this.$route.params.roomId,
+      // })
+      // const stream = myPeer.video(newUserConnectionId, mySharedScreenStream);
+      // myPeer.call(adminId, mySharedScreenStream);
+      this.myPeer.on('call', call => {
+        console.log("on call")
+        call.answer(this.defaultVideoStream)
+      });
     }
   }
 };
@@ -163,6 +200,15 @@ export default {
   padding: 0 20px;
   color: #fff;
   background: rgb(227, 55, 45);
+  font-size: 16px;
+}
+
+.button--screen-share {
+  height: 40px;
+  width: auto;
+  padding: 0 20px;
+  color: #fff;
+  background: rgb(45, 227, 227);
   font-size: 16px;
 }
 </style>
