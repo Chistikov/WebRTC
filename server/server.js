@@ -5,13 +5,25 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
+// function getClientsRooms() {
+//   console.log(Array.from(io.sockets.adapter.rooms.keys()))
+// }
+
 io.on('connection', (socket) => {
+  // getClientsRooms()
   console.log(`BASE SOCKET ${socket.id} CONNECTED`)
+  
   socket.on('JOIN_ROOM', ({roomId, userId, connectionId}) => {
     console.log('New user connected', connectionId)
     socket.join(roomId)
     socket.to(roomId).emit('NEW_USER_CONNECTED', {connectionId})
+
+    socket.on('USER_CHAGED_VIDEO_STREAM', userConnectionId => {
+      io.to(roomId).emit("CHANGED_VIDEO_STREAM", userConnectionId)
+    })
   })
+
+  
     
 });
 
