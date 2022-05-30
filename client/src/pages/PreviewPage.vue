@@ -24,6 +24,7 @@
 <script>
 export default {
   data: () => ({
+    localMediaStream: null,
     isVideoForbidden: null,
     controls: {
       video: true,
@@ -36,32 +37,32 @@ export default {
   methods: {
     toggleVideo() {
       this.controls.video = !this.controls.video
-      this.setupVideoStreaming()
+      this.localMediaStream.getVideoTracks()[0].enabled = this.controls.video
     },
     toggleAudio() {
       this.controls.audio = !this.controls.audio
-      this.setupVideoStreaming()
-    },
-    hasGetUserMedia() {
-      return !!(navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+      this.localMediaStream.getAudioTracks()[0].enabled = this.controls.audio
     },
     setupVideoStreaming() {
       if (this.hasGetUserMedia) {
-      navigator.mediaDevices.getUserMedia({
-          video: this.controls.video ? {width: 1920, height: 1080} : false,
-          audio: true,
-        }).then(stream => {
-          this.isVideoForbidden = false;
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          }).then(stream => {
+            this.localMediaStream = stream;
+            this.localMediaStream.getVideoTracks()[0].enabled = this.controls.video
+            this.localMediaStream.getAudioTracks()[0].enabled = this.controls.audio
+            this.isVideoForbidden = false;
 
-          this.$refs.video.muted = !this.controls.audio
-          this.$refs.video.srcObject = stream;
-          this.$refs.video.addEventListener('loadedmetadata', () => {
-          this.$refs.video.play();
+            this.$refs.video.muted = true
+            this.$refs.video.srcObject = stream;
+            this.$refs.video.addEventListener('loadedmetadata', () => {
+            this.$refs.video.play();
+          })
+        }).catch(e => {
+          console.log(e)
+          this.isVideoForbidden = true;
         })
-      }).catch(e => {
-        console.log(e)
-        this.isVideoForbidden = true;
-      })
       } else {
         this.isVideoForbidden = false;
       }
@@ -69,11 +70,15 @@ export default {
     connectHandler() {
       console.log(this.$route)
       if (this.$route?.params?.roomId) {
-        alert()
         this.$router.push(`/video/${this.$route.params.userId}/${this.$route.params.roomId}`)
       }
     }
   },
+  computed: {
+    hasGetUserMedia() {
+      return !!(navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    }
+  }
 }
 </script>
 
