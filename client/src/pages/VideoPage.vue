@@ -7,7 +7,7 @@
       <div>10:40</div>
     </div>
     <main class="videos-container" ref="videosContainer">
-      <video src="" ref="myMediaStream" style="max-width: calc(100% - 100px)"></video>
+      <video src="" ref="myMediaStream" muted style="max-width: calc(100% - 100px)"></video>
       <!-- <Stream :userId="$route.params.userId"></Stream> -->
     </main>
     <div class="footer">
@@ -45,6 +45,10 @@ export default {
     }
   }),
   async mounted() {
+    setInterval(() => {
+      console.log('CONNECTED PEERS', Object.keys(this.connectedPeers))
+    }, 5000)
+
     navigator.mediaDevices.enumerateDevices()
       .then(function(MediaDeviceInfo) { console.log(MediaDeviceInfo); })
     this.myPeer = new Peer()
@@ -60,6 +64,10 @@ export default {
 
     // При звонке отправляем наш поток видео обратно
     this.myPeer.on('call', call => {
+      console.log(call)
+      if (Object.keys(this.connectedPeers).includes(this.myPeer) || Object.keys(this.connectedPeers).includes(call.provider._id)) {
+        return
+      }
       call.answer(this.myDefaultMediaStream)
       
       // установка видео, которое приходит от входящего звонка
@@ -104,6 +112,9 @@ export default {
       this.$refs.videosContainer.appendChild(video);
     },
     connectToNewUser(newUserConnectionId, myMediaStream) {
+      if (Object.keys(this.connectedPeers).includes(this.myPeer) || Object.keys(this.connectedPeers).includes(newUserConnectionId)) {
+        return
+      }
       console.log(`Звоним пользователю ${newUserConnectionId} и передаем наш видео поток`)
 
       const call = this.myPeer.call(newUserConnectionId, myMediaStream);

@@ -5,12 +5,12 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// function getClientsRooms() {
-//   console.log(Array.from(io.sockets.adapter.rooms.keys()))
-// }
+function getClientsRooms() {
+  console.log(Array.from(io.sockets.adapter.rooms.keys()))
+}
 
 io.on('connection', (socket) => {
-  // getClientsRooms()
+  getClientsRooms()
   console.log(`BASE SOCKET ${socket.id} CONNECTED`)
   
   socket.on('JOIN_ROOM', ({roomId, userId, connectionId}) => {
