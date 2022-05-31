@@ -7,7 +7,7 @@
       <div>10:40</div>
     </div>
     <main class="videos-container" ref="videosContainer">
-      <video src="" ref="myMediaStream" muted style="max-width: calc(100% - 100px)"></video>
+      <video ref="myMediaStream" muted autoplay style="max-width: calc(100% - 100px)"></video>
       <!-- <Stream :userId="$route.params.userId"></Stream> -->
     </main>
     <div class="footer">
@@ -64,6 +64,7 @@ export default {
     } catch (e) {
       console.error(e)
     }
+    this.$refs.myMediaStream.srcObject = this.stream
 
     this.myPeer.on('open', this.openPeerHandler)
     socket.on('GET_USERS', this.getUsers)
