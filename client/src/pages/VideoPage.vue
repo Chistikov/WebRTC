@@ -91,7 +91,7 @@ export default {
     },
     acceptCallHandler(call) {
       console.log('accept call');
-      call.answer()
+      call.answer(this.stream)
       call.on('stream', (stream) => {
         console.log(call)
         // добавление в стор  peerId: stream
