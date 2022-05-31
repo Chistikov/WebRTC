@@ -18,6 +18,8 @@
       <!-- <Stream :userId="$route.params.userId"></Stream> -->
     </main>
     <div class="footer">
+      <button class="button button--disconnect" @click="toggleMicrophone">mic {{microphoneAnable}}</button>
+      <button class="button button--disconnect" @click="toggleCamera">cam {{cameraAnable}}</button>
       <button class="button button--disconnect">завершить звонок</button>
       <button class="button button--screen-share" @click="shareScreenHandler">{{ myScreenStream ? 'Остановить демонстрацию': 'Демонстрация экрана'}}</button>
     </div>
@@ -39,7 +41,9 @@ export default {
   data: () => ({
     myPeer: null,
     stream: null,
-    peers: {}
+    peers: {},
+    microphoneAnable: true,
+    cameraAnable: true,
   }),
   async mounted() {
     
@@ -105,7 +109,17 @@ export default {
       const videoForDelete = document.getElementById(peerId.replaceAll('-', '_'))
       videoForDelete.remove()
       delete this.peers[peerId]
-    }
+    },
+    toggleCamera() {
+      this.cameraAnable = !this.cameraAnable;
+      this.stream.getVideoTracks()[0].enabled = this.cameraAnable;
+      console.log('Camera', this.cameraAnable);
+    },
+    toggleMicrophone() {
+      this.microphoneAnable = !this.microphoneAnable;
+      this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
+      console.log('Microphone', this.microphoneAnable);
+    },
   },
   watch: {
     peers: {
