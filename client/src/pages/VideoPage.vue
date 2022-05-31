@@ -56,6 +56,11 @@ export default {
     this.myPeer = new Peer(peerUuid)
     console.log(this.myPeer.id)
 
+    this.myPeer.on('open', this.openPeerHandler)
+    this.myPeer.on('call', this.acceptCallHandler)
+    socket.on('GET_USERS', this.getUsers)
+    socket.on('USER_DISCONNECTED', this.userDisconnected)
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -66,9 +71,21 @@ export default {
     }
     this.$refs.myMediaStream.srcObject = this.stream
 
-    this.myPeer.on('open', this.openPeerHandler)
-    socket.on('GET_USERS', this.getUsers)
-    socket.on('USER_DISCONNECTED', this.userDisconnected)
+    if (!this.myPeer || ! this.stream) return;
+
+    socket.on('USER_JOINED', ({peerId}) => {
+      const call = this.myPeer.call(peerId, this.stream)
+      call.on('stream', (stream) => {
+        const streamData = {userStream: stream, peerId}
+        console.log(streamData)
+      })
+    })
+
+    
+    
+    
+
+    
 
     // socket.on('ADD_PEER', this.addPeer)
     // // socket.on("NEW_USER_CONNECTED", this.newUserHandler)
@@ -108,6 +125,9 @@ export default {
     },
     userDisconnected({userId}) {
       console.log(`User ${userId} disconnected`)
+    },
+    acceptCallHandler(call) {
+      call.answer()
     }
     // openPeerHandler(connectionId) {
     //   socket.emit("JOIN_ROOM", {

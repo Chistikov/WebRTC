@@ -25,6 +25,7 @@ io.on('connect', socket => {
       rooms[roomId].push(peerId)
     }
     socket.join(roomId)
+    socket.to(roomId).emit('USER_JOINED', {peerId})
     console.log(rooms)
 
     socket.emit('GET_USERS', {
