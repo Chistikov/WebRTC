@@ -48,7 +48,7 @@ io.on('connect', socket => {
 
   function leaveRoom(roomId, peerId) {
     rooms[roomId] = rooms[roomId].filter(participant => participant !== peerId)
-    socket.to(roomId).emit('USER_DISCONNECTED', {userId: peerId})
+    socket.to(roomId).emit('USER_DISCONNECTED', {peerId})
   }
 })
 

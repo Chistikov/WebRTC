@@ -6,8 +6,15 @@
       {{ `userId: ${this.$route.params.userId}` }}
       <div>10:40</div>
     </div>
-    <main class="videos-container" ref="videosContainer">
-      <video ref="myMediaStream" muted autoplay style="max-width: calc(100% - 100px)"></video>
+    <main class="videos-container" >
+      {{ peers }}
+      <video ref="myMediaStream" muted autoplay style="max-width: calc(100% - 100px); border: 5px solid red;s"></video>
+      <div ref="videosContainer"></div>
+      <!-- <video
+        v-for="userStream of Object.values(peers)"
+        :key="userStream.ids"
+        :srcObject="userStream"
+      ></video> -->
       <!-- <Stream :userId="$route.params.userId"></Stream> -->
     </main>
     <div class="footer">
@@ -32,19 +39,7 @@ export default {
   data: () => ({
     myPeer: null,
     stream: null,
-    // myDefaultMediaStream: null,
-    // myVideoStream: null,
-    // myScreenStream: null,
-    // connectedPeers: {},
-    // mediaConfig: {
-    //   camera: {
-    //     audio: true,
-    //     video: {
-    //       width: { ideal: 1280 },
-    //       height: { ideal: 720 }
-    //     }
-    //   }
-    // }
+    peers: {}
   }),
   async mounted() {
     
@@ -59,7 +54,7 @@ export default {
     this.myPeer.on('open', this.openPeerHandler)
     this.myPeer.on('call', this.acceptCallHandler)
     socket.on('GET_USERS', this.getUsers)
-    socket.on('USER_DISCONNECTED', this.userDisconnected)
+    socket.on('USER_DISCONNECTED', this.userDisconectedHander)
 
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
@@ -74,43 +69,14 @@ export default {
     if (!this.myPeer || ! this.stream) return;
 
     socket.on('USER_JOINED', ({peerId}) => {
+      console.log('initiate call');
       const call = this.myPeer.call(peerId, this.stream)
       call.on('stream', (stream) => {
-        const streamData = {userStream: stream, peerId}
-        console.log(streamData)
+        // добавление в стор peerId: stream
+        this.peers[peerId] = stream;
+        console.log("peers:", this.peers);
       })
     })
-
-    
-    
-    
-
-    
-
-    // socket.on('ADD_PEER', this.addPeer)
-    // // socket.on("NEW_USER_CONNECTED", this.newUserHandler)
-    // // socket.on('CHANGED_VIDEO_STREAM', this.chagedVideoStream)
-
-    // this.myVideoStream = await navigator.mediaDevices.getUserMedia({
-    //   video: true,
-    //   audio: true
-    // })
-    // this.myDefaultMediaStream = this.myVideoStream;
-
-    // // При звонке отправляем наш поток видео обратно
-    // this.myPeer.on('call', call => {
-    //   console.log(call)
-    //   if (Object.keys(this.connectedPeers).includes(this.myPeer) || Object.keys(this.connectedPeers).includes(call.provider._id)) {
-    //     return
-    //   }
-    //   call.answer(this.myDefaultMediaStream)
-      
-    //   // установка видео, которое приходит от входящего звонка
-    //   const userVideo = document.createElement("video")
-    //   call.on('stream', userVideoSream => {
-    //     this.appendVideoStream(userVideo, userVideoSream)
-    //   })
-    // })
     
   },
   methods: {
@@ -121,96 +87,44 @@ export default {
       })
     },
     getUsers({participants}) {
-      console.log(participants)
-    },
-    userDisconnected({userId}) {
-      console.log(`User ${userId} disconnected`)
+      console.log("participants:", participants)
     },
     acceptCallHandler(call) {
+      console.log('accept call');
       call.answer()
+      call.on('stream', (stream) => {
+        console.log(call)
+        // добавление в стор  peerId: stream
+        if (Object.keys(this.peers).includes(call.peer)) return;
+        this.peers[call.peer] = stream;
+        console.log("peers:", this.peers);
+      })
+    },
+    userDisconectedHander({peerId}) {
+      console.log(`User ${peerId} disconnected`)
+      const videoForDelete = document.getElementById(peerId.replaceAll('-', '_'))
+      videoForDelete.remove()
+      delete this.peers[peerId]
     }
-    // openPeerHandler(connectionId) {
-    //   socket.emit("JOIN_ROOM", {
-    //     roomId: this.$route.params.roomId,
-    //     userId: this.$route.params.userId,
-    //     connectionId: connectionId,
-    //   })
-    // },
-    // addPeer(peerData) {
-    //   const {peerId, createOffer} = peerData;
-    //   if (createOffer) {
-    //     // позвонить
-
-    //   } else {
-    //     // принять звонок
-    //   }
-    // },
-    // newUserHandler({connectionId}) {
-    //   // отправляем новому созданному пользователю звонок с нашим потоком данных
-    //   console.log('New user connected:', connectionId)
-    //   this.connectToNewUser(connectionId, this.myDefaultMediaStream)
-    // },
-    // async shareScreenHandler() {
-    //   this.myScreenStream = await navigator.mediaDevices.getDisplayMedia()
-    //   this.myDefaultMediaStream =  this.myScreenStream;
-    //   // обработчик прекращения демонстрации
-    //   this.myScreenStream.getVideoTracks()[0].onended = this.stopScreenStreamingHandler;
-    // },
-    // stopScreenStreamingHandler() {
-    //   console.log('Демонстарция экрана остановелна')
-    //   this.myDefaultMediaStream = this.myVideoStream
-    //   this.myScreenStream = null
-    // },
-    // appendVideoStream(video, stream) {
-    //   video.muted = true;
-    //   video.classList.add("video");
-    //   video.srcObject = stream;
-    //   video.addEventListener("loadedmetadata", () => {
-    //     video.play();
-    //   });
-    //   this.$refs.videosContainer.appendChild(video);
-    // },
-    // connectToNewUser(newUserConnectionId, myMediaStream) {
-    //   if (Object.keys(this.connectedPeers).includes(this.myPeer) || Object.keys(this.connectedPeers).includes(newUserConnectionId)) {
-    //     return
-    //   }
-    //   console.log(`Звоним пользователю ${newUserConnectionId} и передаем наш видео поток`)
-
-    //   const call = this.myPeer.call(newUserConnectionId, myMediaStream);
-
-    //   // слушаем поток видое от другого пользователя и устанавливаем его в video
-    //   const userVideo = document.createElement("video")
-    //   call.on('stream', userVideoStream => {
-    //     this.appendVideoStream(userVideo, userVideoStream)
-    //   })
-    //   // удаляем видео абонента, если соединение закрылось
-    //   call.on('close', () => {
-    //     userVideo.remove()
-    //   })
-
-    //   // Добавляем в список активных подключений текущее подключение с новым пользователем
-    //   this.connectedPeers[newUserConnectionId] = call;
-    // },
-    // chagedVideoStream(userConnectionId) {
-    //   console.log('User chaged video stream:', userConnectionId)
-    //   // this.myPeer.reconnect()
-    //   this.connectToNewUser(userConnectionId, this.myDefaultMediaStream)
-    // }
   },
   watch: {
-    // myDefaultMediaStream: {
-    //   handler(newStream) {
-    //     console.log("Source of media stream canged")
-
-    //     // this.$refs.myMediaStream.muted = true;
-    //     this.$refs.myMediaStream.srcObject = newStream;
-    //     this.$refs.myMediaStream.addEventListener("loadedmetadata", () => {
-    //       this.$refs.myMediaStream.play();
-    //     });
-    //     socket.emit("USER_CHAGED_VIDEO_STREAM", this.myPeer.id)
-    //   },
-    //   deep: true
-    // }
+    peers: {
+      handler(newVal) {
+        console.log('REDRAW USERS VIDEOS');
+        this.$refs.videosContainer.innerHTML = ""
+        const streams = Object.entries(newVal);
+        console.log(streams);
+        streams.forEach(stream => {
+          const video = document.createElement('video')
+          video.id = stream[0].replaceAll('-', '_')
+          video.title = stream[0]
+          video.srcObject = stream[1];
+          video.play()
+          this.$refs.videosContainer.appendChild(video);
+        })
+      },
+      deep: true,
+    }
     
   }
 };
