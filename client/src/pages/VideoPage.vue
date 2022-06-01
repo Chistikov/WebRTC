@@ -7,7 +7,7 @@
       <div>10:40</div>
     </div>
     <main class="videos-container" >
-      {{ peers }}
+      <!-- {{ peers }} -->
       <video ref="myMediaStream" muted autoplay style="max-width: calc(500px); border: 5px solid red;s"></video>
       <div ref="videosContainer" class="user-videos-container"></div>
       <!-- <video
@@ -65,7 +65,7 @@ export default {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true // TODO: изменить на true
+        audio: true
       })
       this.stream.getVideoTracks()[0].enabled = this.cameraAnable;
       this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
@@ -132,6 +132,7 @@ export default {
 
         this.screenStream.getVideoTracks()[0].onended = this.switchLocalVideoToCamera.bind(this)
       } else {
+        this.screenStream.getTracks().forEach(track => {track.stop()}) // force stop screen sharing
         this.switchLocalVideoToCamera()
       }
     },
