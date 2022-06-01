@@ -8,8 +8,8 @@
     </div>
     <main class="videos-container" >
       {{ peers }}
-      <video ref="myMediaStream" muted autoplay style="max-width: calc(100% - 100px); border: 5px solid red;s"></video>
-      <div ref="videosContainer"></div>
+      <video ref="myMediaStream" muted autoplay style="max-width: calc(500px); border: 5px solid red;s"></video>
+      <div ref="videosContainer" class="user-videos-container"></div>
       <!-- <video
         v-for="userStream of Object.values(peers)"
         :key="userStream.ids"
@@ -41,9 +41,11 @@ export default {
   data: () => ({
     myPeer: null,
     stream: null,
+    fallbackStream: null,
     peers: {},
     microphoneAnable: true,
     cameraAnable: true,
+    myScreenStream: null
   }),
   async mounted() {
     
@@ -63,8 +65,10 @@ export default {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true
+        audio: true // TODO: изменить на true
       })
+      this.stream.getVideoTracks()[0].enabled = this.cameraAnable;
+      this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
     } catch (e) {
       console.error(e)
     }
@@ -120,6 +124,27 @@ export default {
       this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
       console.log('Microphone', this.microphoneAnable);
     },
+    async shareScreenHandler() {
+      this.fallbackStream = this.stream;
+      this.stream = await navigator.mediaDevices.getDisplayMedia()
+      this.$refs.myMediaStream.srcObject = this.stream
+
+      const videoTrack = this.stream .getTracks().find(track => track.kind === 'video')
+      console.log('videoTrack', videoTrack);
+      Object.values(this.myPeer.connections).forEach((connection) => {
+        connection[0].peerConnection
+          .getSenders()[1]
+          .replaceTrack(videoTrack)
+          .catch(e => console.error(e))
+      })
+
+      this.stream.getVideoTracks()[0].onended = function () {
+        this.stream = this.fallbackStream;
+        this.$refs.myMediaStream.srcObject = this.stream
+        this.stream.play()
+      };
+      
+    }
   },
   watch: {
     peers: {
@@ -131,6 +156,7 @@ export default {
         streams.forEach(stream => {
           const video = document.createElement('video')
           video.id = stream[0].replaceAll('-', '_')
+          video.classList.add('video')
           video.title = stream[0]
           video.srcObject = stream[1];
           video.play()
@@ -203,6 +229,9 @@ export default {
   background: rgb(45, 227, 227);
   font-size: 16px;
 }
+.user-videos-container {
+  width: 300px;
+}
 </style>
 
 <style>
@@ -224,7 +253,8 @@ export default {
 }
 
 .video {
-  width: 500px;
+  max-width: 500px;
+  display: block;
   padding: 10px;
 }
 </style>

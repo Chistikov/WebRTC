@@ -1,8 +1,6 @@
 <template>
   <!-- {{ userId }} -->
   <!-- <Stream :userId="userId"/> -->
-  <router-link to="/">preview</router-link>
-  <router-link to="/video">video</router-link>
   <router-view/>
 </template>
 
