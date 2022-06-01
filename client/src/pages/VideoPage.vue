@@ -41,7 +41,7 @@ export default {
   data: () => ({
     myPeer: null,
     stream: null,
-    fallbackStream: null,
+    screenStream: null,
     peers: {},
     microphoneAnable: true,
     cameraAnable: true,
@@ -125,25 +125,30 @@ export default {
       console.log('Microphone', this.microphoneAnable);
     },
     async shareScreenHandler() {
-      this.fallbackStream = this.stream;
-      this.stream = await navigator.mediaDevices.getDisplayMedia()
-      this.$refs.myMediaStream.srcObject = this.stream
+      if (!this.screenStream) {
+        this.screenStream = await navigator.mediaDevices.getDisplayMedia()
+        this.$refs.myMediaStream.srcObject = this.screenStream;
+        this.sendNewStreamToOtherPeers(this.screenStream)
 
-      const videoTrack = this.stream .getTracks().find(track => track.kind === 'video')
-      console.log('videoTrack', videoTrack);
-      Object.values(this.myPeer.connections).forEach((connection) => {
-        connection[0].peerConnection
-          .getSenders()[1]
-          .replaceTrack(videoTrack)
-          .catch(e => console.error(e))
-      })
-
-      this.stream.getVideoTracks()[0].onended = function () {
-        this.stream = this.fallbackStream;
-        this.$refs.myMediaStream.srcObject = this.stream
-        this.stream.play()
-      };
-      
+        this.screenStream.getVideoTracks()[0].onended = this.switchLocalVideoToCamera.bind(this)
+      } else {
+        this.switchLocalVideoToCamera()
+      }
+    },
+    switchLocalVideoToCamera() {
+      this.$refs.myMediaStream.srcObject = this.stream;
+      this.sendNewStreamToOtherPeers(this.stream)
+      this.screenStream = null;
+    },
+    sendNewStreamToOtherPeers(stream) {
+      const videoTrack = stream.getTracks().find(track => track.kind === 'video');
+        Object.values(this.myPeer.connections).forEach(connection => {
+          console.log(connection);
+          connection[0].peerConnection
+            .getSenders()[1]
+            .replaceTrack(videoTrack)
+            .catch(e => console.error(e))
+        })
     }
   },
   watch: {
