@@ -36,7 +36,6 @@ io.on('connect', socket => {
     socket.on('disconnect', () => {
       console.log(`User ${peerId} leave the room ${roomId}`)
       leaveRoom(roomId, peerId)
-      // rooms[roomId] = 
     })
   })
 

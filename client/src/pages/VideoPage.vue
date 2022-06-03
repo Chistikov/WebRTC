@@ -7,15 +7,9 @@
       <div>10:40</div>
     </div>
     <main class="videos-container" >
-      <!-- {{ peers }} -->
-      <video ref="myMediaStream" muted autoplay style="max-width: calc(500px); border: 5px solid red;s"></video>
-      <div ref="videosContainer" class="user-videos-container"></div>
-      <!-- <video
-        v-for="userStream of Object.values(peers)"
-        :key="userStream.ids"
-        :srcObject="userStream"
-      ></video> -->
-      <!-- <Stream :userId="$route.params.userId"></Stream> -->
+      <video ref="myMediaStream" muted autoplay></video>
+      <!-- <div v-for="(peer, key) in peers" :key="key">{{key}} {{ peer }}</div> -->
+      <video v-for="(peer, key) in peers" :srcObject.prop="peer" :key="key" autoplay muted :title="key"></video>
     </main>
     <div class="footer">
       <button class="button button--disconnect" @click="toggleMicrophone">mic {{microphoneAnable}}</button>
@@ -47,14 +41,16 @@ export default {
     cameraAnable: true,
     myScreenStream: null
   }),
+  created() {
+    const peerUuid = uuidv4()
+    this.myPeer = new Peer(peerUuid)
+  },
   async mounted() {
     
     // // список медиа устройств
     // await navigator.mediaDevices.enumerateDevices()
     //   .then(function(MediaDeviceInfo) { console.log(MediaDeviceInfo); })
-
-    const peerUuid = uuidv4()
-    this.myPeer = new Peer(peerUuid)
+    
     console.log(this.myPeer.id)
 
     this.myPeer.on('open', this.openPeerHandler)
@@ -101,17 +97,13 @@ export default {
       console.log('accept call');
       call.answer(this.stream)
       call.on('stream', (stream) => {
-        console.log(call)
-        // добавление в стор  peerId: stream
-        if (Object.keys(this.peers).includes(call.peer)) return;
+        console.log('call', call)
         this.peers[call.peer] = stream;
         console.log("peers:", this.peers);
       })
     },
     userDisconectedHander({peerId}) {
       console.log(`User ${peerId} disconnected`)
-      const videoForDelete = document.getElementById(peerId.replaceAll('-', '_'))
-      videoForDelete.remove()
       delete this.peers[peerId]
     },
     toggleCamera() {
@@ -151,27 +143,6 @@ export default {
             .catch(e => console.error(e))
         })
     }
-  },
-  watch: {
-    peers: {
-      handler(newVal) {
-        console.log('REDRAW USERS VIDEOS');
-        this.$refs.videosContainer.innerHTML = ""
-        const streams = Object.entries(newVal);
-        console.log(streams);
-        streams.forEach(stream => {
-          const video = document.createElement('video')
-          video.id = stream[0].replaceAll('-', '_')
-          video.classList.add('video')
-          video.title = stream[0]
-          video.srcObject = stream[1];
-          video.play()
-          this.$refs.videosContainer.appendChild(video);
-        })
-      },
-      deep: true,
-    }
-    
   }
 };
 </script>
