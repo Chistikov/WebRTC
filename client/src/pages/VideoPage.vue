@@ -7,9 +7,15 @@
       <div>10:40</div>
     </div>
     <main class="videos-container" >
-      <video ref="myMediaStream" muted autoplay></video>
+      <div class="video-wrapper">
+        <video ref="myMediaStream" muted autoplay :title="myPeer._id"></video>
+      </div> 
+      
       <!-- <div v-for="(peer, key) in peers" :key="key">{{key}} {{ peer }}</div> -->
-      <video v-for="(peer, key) in peers" :srcObject.prop="peer" :key="key" autoplay muted :title="key"></video>
+      <div class="video-wrapper" v-for="(peer, key) in peers"  :key="key" >
+        <video :srcObject.prop="peer" autoplay :title="key"></video>
+      </div> 
+      
     </main>
     <div class="footer">
       <button class="button button--disconnect" @click="toggleMicrophone">mic {{microphoneAnable}}</button>
@@ -44,6 +50,7 @@ export default {
   created() {
     const peerUuid = uuidv4()
     this.myPeer = new Peer(peerUuid)
+    console.log(this.myPeer._id)
   },
   async mounted() {
     
@@ -173,12 +180,15 @@ export default {
   flex-shrink: 0;
 }
 .videos-container {
-  flex-grow: 1;
+  /* flex-grow: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  align-content: center;
+  align-content: center; */
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr
 }
 
 .button {
@@ -216,8 +226,8 @@ export default {
   /* min-width: 300px;
   max-width: 600px; */
   /* widows: calc(100% - 4 * 20px); */
-  max-width: 300px;
-  min-width: 300px;
+  /* max-width: 300px;
+  min-width: 300px; */
   flex-grow: 1;
   margin: 10px;
   background: #000;
