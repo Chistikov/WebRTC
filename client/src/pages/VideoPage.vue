@@ -10,8 +10,8 @@
       <div v-for="(peer, key) in peers" :key="key">{{key}} {{ peer }}</div>
     </div>
     <main class="videos-container" >
-      <div class="video-wrapper">
-        <video ref="myMediaStream" muted autoplay :title="myPeer._id"></video>
+      <div v-if="myPeer && stream" class="video-wrapper">
+        <video ref="myMediaStream" :srcObject.prop="stream" muted autoplay :title="myPeer._id"></video>
       </div> 
       
       <div class="video-wrapper" v-for="(peer, key) in peers"  :key="key" >
@@ -49,7 +49,7 @@ export default {
     cameraAnable: true,
     myScreenStream: null
   }),
-  async created() {
+  async mounted() {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -57,33 +57,36 @@ export default {
       })
       this.stream.getVideoTracks()[0].enabled = this.cameraAnable;
       this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
+      // this.$refs.myMediaStream.srcObject = this.stream
       
       const peerUuid = uuidv4()
       this.myPeer = new Peer(peerUuid)
       console.log(this.myPeer._id)
+
+      // // список медиа устройств
+      // await navigator.mediaDevices.enumerateDevices()
+      //   .then(function(MediaDeviceInfo) { console.log(MediaDeviceInfo); })
+      
+      console.log(this.myPeer.id)
+
+      socket.on('GET_USERS', this.getUsers)
+      socket.on('USER_DISCONNECTED', this.userDisconectedHander)
+      if (!this.myPeer || !this.stream) return;
+      socket.on('USER_JOINED', this.newUserJoinedHandler)
+      this.myPeer.on('call', this.acceptCallHandler)
+      this.myPeer.on('open', this.openPeerHandler)
     } catch (e) {
       console.error(e)
     }
   },
-  async mounted() {
-    
-    // // список медиа устройств
-    // await navigator.mediaDevices.enumerateDevices()
-    //   .then(function(MediaDeviceInfo) { console.log(MediaDeviceInfo); })
-    
-    console.log(this.myPeer.id)
-
-    this.myPeer.on('open', this.openPeerHandler)
-    this.myPeer.on('call', this.acceptCallHandler)
-    socket.on('GET_USERS', this.getUsers)
-    socket.on('USER_DISCONNECTED', this.userDisconectedHander)
-
-    
-    this.$refs.myMediaStream.srcObject = this.stream
-
-    if (!this.myPeer || ! this.stream) return;
-
-    socket.on('USER_JOINED', ({peerId}) => {
+  methods: {
+    openPeerHandler(peerId) {
+      socket.emit('JOIN_ROOM', {
+        roomId: this.$route.params.roomId,
+        peerId: peerId
+      })
+    },
+    newUserJoinedHandler({peerId}) {
       console.log('initiate call');
       console.log('NEW USER CONNECTION ID:', peerId);
       const call = this.myPeer.call(peerId, this.stream)
@@ -93,15 +96,6 @@ export default {
         console.log('OLD PEERS OBJ:', this.peers);
         this.peers[peerId] = stream;
         console.log('NEW PEERS OBJ:', this.peers);
-      })
-    })
-    
-  },
-  methods: {
-    openPeerHandler(peerId) {
-      socket.emit('JOIN_ROOM', {
-        roomId: this.$route.params.roomId,
-        peerId: peerId
       })
     },
     getUsers({participants}) {
