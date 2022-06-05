@@ -6,12 +6,14 @@
       {{ `userId: ${this.$route.params.userId}` }}
       <div>10:40</div>
     </div>
+    <div>
+      <div v-for="(peer, key) in peers" :key="key">{{key}} {{ peer }}</div>
+    </div>
     <main class="videos-container" >
       <div class="video-wrapper">
         <video ref="myMediaStream" muted autoplay :title="myPeer._id"></video>
       </div> 
       
-      <!-- <div v-for="(peer, key) in peers" :key="key">{{key}} {{ peer }}</div> -->
       <div class="video-wrapper" v-for="(peer, key) in peers"  :key="key" >
         <video :srcObject.prop="peer" autoplay :title="key"></video>
       </div> 
@@ -47,10 +49,21 @@ export default {
     cameraAnable: true,
     myScreenStream: null
   }),
-  created() {
-    const peerUuid = uuidv4()
-    this.myPeer = new Peer(peerUuid)
-    console.log(this.myPeer._id)
+  async created() {
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      })
+      this.stream.getVideoTracks()[0].enabled = this.cameraAnable;
+      this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
+      
+      const peerUuid = uuidv4()
+      this.myPeer = new Peer(peerUuid)
+      console.log(this.myPeer._id)
+    } catch (e) {
+      console.error(e)
+    }
   },
   async mounted() {
     
@@ -65,27 +78,21 @@ export default {
     socket.on('GET_USERS', this.getUsers)
     socket.on('USER_DISCONNECTED', this.userDisconectedHander)
 
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      })
-      this.stream.getVideoTracks()[0].enabled = this.cameraAnable;
-      this.stream.getAudioTracks()[0].enabled = this.microphoneAnable;
-    } catch (e) {
-      console.error(e)
-    }
+    
     this.$refs.myMediaStream.srcObject = this.stream
 
     if (!this.myPeer || ! this.stream) return;
 
     socket.on('USER_JOINED', ({peerId}) => {
       console.log('initiate call');
+      console.log('NEW USER CONNECTION ID:', peerId);
       const call = this.myPeer.call(peerId, this.stream)
       call.on('stream', (stream) => {
+        console.log('NEW USER STREAM:', stream);
         // добавление в стор peerId: stream
+        console.log('OLD PEERS OBJ:', this.peers);
         this.peers[peerId] = stream;
-        console.log("peers:", this.peers);
+        console.log('NEW PEERS OBJ:', this.peers);
       })
     })
     
