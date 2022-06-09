@@ -21,20 +21,35 @@ const rooms = {}
 io.on('connect', socket => {
   console.log(`SOCKET ${socket.id} CONNECTED`)
 
-  socket.on('JOIN_ROOM', ({roomId, peerId}) => {
+  socket.on('JOIN_ROOM', (metadata) => {
+    const {roomId, peerId, userName} = metadata;
     console.log(`User ${peerId} joined to the room ${roomId}`);
     if (!rooms[roomId]) {
-      rooms[roomId] = [peerId]
+      rooms[roomId] = {
+        pearsList: {
+          [peerId]: {
+            peerId,
+            userName
+          }
+        }
+      }
     } else {
-      rooms[roomId].push(peerId)
+      rooms[roomId].pearsList[peerId] = {
+        peerId,
+        userName
+      }
     }
     socket.join(roomId)
-    socket.to(roomId).emit('USER_JOINED', {peerId})
+    socket.to(roomId).emit('USER_JOINED', rooms[roomId].pearsList[peerId])
     console.log(rooms)
 
-    socket.emit('GET_USERS', {
-      roomId: roomId,
-      participants: rooms[roomId]
+    // socket.emit('GET_USERS', {
+    //   roomId: roomId,
+    //   participants: rooms[roomId]
+    // })
+
+    socket.on('FETCH_PEER_DATA', ({ roomId, peerId }) => {
+      socket.emit('SET_PEER_DATA', rooms[roomId].pearsList[peerId])
     })
 
     socket.on('disconnect', () => {
@@ -49,7 +64,7 @@ io.on('connect', socket => {
   })
 
   function leaveRoom(roomId, peerId) {
-    rooms[roomId] = rooms[roomId].filter(participant => participant !== peerId)
+    delete rooms[roomId].pearsList[peerId];
     socket.to(roomId).emit('USER_DISCONNECTED', {peerId})
   }
 })
