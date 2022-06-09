@@ -22,21 +22,23 @@ io.on('connect', socket => {
   console.log(`SOCKET ${socket.id} CONNECTED`)
 
   socket.on('JOIN_ROOM', (metadata) => {
-    const {roomId, peerId, userName} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable} = metadata;
     console.log(`User ${peerId} joined to the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
         pearsList: {
           [peerId]: {
             peerId,
-            userName
+            userName,
+            isMicrophoneEnable
           }
         }
       }
     } else {
       rooms[roomId].pearsList[peerId] = {
         peerId,
-        userName
+        userName,
+        isMicrophoneEnable,
       }
     }
     socket.join(roomId)
@@ -50,6 +52,12 @@ io.on('connect', socket => {
 
     socket.on('FETCH_PEER_DATA', ({ roomId, peerId }) => {
       socket.emit('SET_PEER_DATA', rooms[roomId].pearsList[peerId])
+    })
+
+    socket.on('USER_CHANGED_MICROPHONE_STATUS', (changeMicStatusData) => {
+      const { roomId, peerId, isMicrophoneEnable } = changeMicStatusData;
+      rooms[roomId].pearsList[peerId].isMicrophoneEnable = isMicrophoneEnable;
+      socket.to(roomId).emit('USER_CHANGED_MICROPHONE_STATUS', { peerId, isMicrophoneEnable });
     })
 
     socket.on('disconnect', () => {
