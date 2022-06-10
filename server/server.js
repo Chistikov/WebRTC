@@ -32,7 +32,8 @@ io.on('connect', socket => {
             userName,
             isMicrophoneEnable
           }
-        }
+        },
+        shareScreenUserId: null,
       }
     } else {
       rooms[roomId].pearsList[peerId] = {
@@ -58,6 +59,11 @@ io.on('connect', socket => {
       const { roomId, peerId, isMicrophoneEnable } = changeMicStatusData;
       rooms[roomId].pearsList[peerId].isMicrophoneEnable = isMicrophoneEnable;
       socket.to(roomId).emit('USER_CHANGED_MICROPHONE_STATUS', { peerId, isMicrophoneEnable });
+    })
+
+    socket.on('USER_STARTED_SCREEN_SHARING', ({roomId, userId}) => {
+      rooms[roomId].pearsList[peerId].shareScreenUserId = userId;
+      socket.to(roomId).emit('USER_STARTED_SCREEN_SHARING', {peerId})
     })
 
     socket.on('disconnect', () => {
