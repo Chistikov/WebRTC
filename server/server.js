@@ -73,6 +73,42 @@ io.on('connect', socket => {
     })
   })
 
+  socket.on('STARTED_SCREEN_SHARING', (metadata) => {
+    const {roomId, peerId, userName, isMicrophoneEnable} = metadata;
+    console.log(`User ${peerId} started stream in the room ${roomId}`);
+    if (!rooms[roomId]) {
+      rooms[roomId] = {
+        pearsList: {
+          [peerId]: {
+            peerId,
+            userName,
+            isMicrophoneEnable
+          }
+        },
+        shareScreenUserId: null,
+      }
+    } else {
+      rooms[roomId].pearsList[peerId] = {
+        peerId,
+        userName,
+        isMicrophoneEnable,
+      }
+    }
+    socket.join(roomId);
+    socket.to(roomId).emit('STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
+    socket.emit('SETUP_SHARE_SCREEN_USER_ID', {peerId: rooms[roomId].shareScreenUserId})
+    console.log(rooms)
+
+    socket.on('STOPPED_SCREEN_SHARING', ({ roomId, peerId }) => {
+      leaveRoom(roomId, peerId)
+    })
+    
+    socket.on('disconnect', () => {
+      console.log(`User ${peerId} in room ${roomId} stoped sreen sharing`)
+      leaveRoom(roomId, peerId)
+    })
+  });
+
   // disconnect срабатывает при закрытии браузера или вкладки
   socket.on('disconnect', () => {
     console.log(`SOCKET DISCONNECTED`)
