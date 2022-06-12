@@ -44,6 +44,7 @@ io.on('connect', socket => {
     }
     socket.join(roomId)
     socket.to(roomId).emit('USER_JOINED', rooms[roomId].pearsList[peerId])
+    socket.emit('SETUP_SHARE_SCREEN_USER_ID', {peerId: rooms[roomId].shareScreenUserId})
     console.log(rooms)
 
     // socket.emit('GET_USERS', {
@@ -62,7 +63,7 @@ io.on('connect', socket => {
     })
 
     socket.on('USER_STARTED_SCREEN_SHARING', ({roomId, userId}) => {
-      rooms[roomId].pearsList[peerId].shareScreenUserId = userId;
+      rooms[roomId].shareScreenUserId = userId;
       socket.to(roomId).emit('USER_STARTED_SCREEN_SHARING', {peerId})
     })
 
@@ -79,6 +80,9 @@ io.on('connect', socket => {
 
   function leaveRoom(roomId, peerId) {
     delete rooms[roomId].pearsList[peerId];
+    if (rooms[roomId].shareScreenUserId === peerId) {
+      rooms[roomId].shareScreenUserId = null;
+    }
     socket.to(roomId).emit('USER_DISCONNECTED', {peerId})
   }
 })
