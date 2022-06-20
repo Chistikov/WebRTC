@@ -77,7 +77,7 @@ io.on('connect', socket => {
 
   socket.on('STARTED_SCREEN_SHARING', (metadata) => {
     const {roomId, peerId, userName, isMicrophoneEnable, isScreenSharingStream} = metadata;
-    console.log(`User ${peerId} started stream in the room ${roomId}`);
+    console.log(`User ${peerId} started screen sharing in the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
         pearsList: {
@@ -99,9 +99,7 @@ io.on('connect', socket => {
       }
     }
     socket.join(roomId);
-    // socket.to(roomId).emit('USER_STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
-    socket.to(roomId).emit('STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
-    socket.emit('SETUP_SHARE_SCREEN_USER_ID', {peerId: rooms[roomId].shareScreenUserId})
+    socket.to(roomId).emit('PEER_STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
     console.log(rooms)
 
     socket.on('USER_STOPPED_SCREEN_SHARING', ({ roomId, peerId }) => {
