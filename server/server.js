@@ -22,7 +22,7 @@ io.on('connect', socket => {
   console.log(`SOCKET ${socket.id} CONNECTED`)
 
   socket.on('JOIN_ROOM', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} joined to the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -30,7 +30,8 @@ io.on('connect', socket => {
           [peerId]: {
             peerId,
             userName,
-            isMicrophoneEnable
+            isMicrophoneEnable,
+            isScreenSharingStream,
           }
         },
         shareScreenUserId: null,
@@ -40,6 +41,7 @@ io.on('connect', socket => {
         peerId,
         userName,
         isMicrophoneEnable,
+        isScreenSharingStream,
       }
     }
     socket.join(roomId)
@@ -74,7 +76,7 @@ io.on('connect', socket => {
   })
 
   socket.on('STARTED_SCREEN_SHARING', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} started stream in the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -82,7 +84,8 @@ io.on('connect', socket => {
           [peerId]: {
             peerId,
             userName,
-            isMicrophoneEnable
+            isMicrophoneEnable,
+            isScreenSharingStream,
           }
         },
         shareScreenUserId: null,
@@ -92,14 +95,17 @@ io.on('connect', socket => {
         peerId,
         userName,
         isMicrophoneEnable,
+        isScreenSharingStream
       }
     }
     socket.join(roomId);
+    // socket.to(roomId).emit('USER_STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
     socket.to(roomId).emit('STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
     socket.emit('SETUP_SHARE_SCREEN_USER_ID', {peerId: rooms[roomId].shareScreenUserId})
     console.log(rooms)
 
-    socket.on('STOPPED_SCREEN_SHARING', ({ roomId, peerId }) => {
+    socket.on('USER_STOPPED_SCREEN_SHARING', ({ roomId, peerId }) => {
+      socket.to(roomId).emit('USER_STOPPED_SCREEN_SHARING');
       leaveRoom(roomId, peerId)
     })
     
