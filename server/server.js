@@ -22,7 +22,7 @@ io.on('connect', socket => {
   console.log(`SOCKET ${socket.id} CONNECTED`)
 
   socket.on('JOIN_ROOM', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable, userId, userAvatar, isScreenSharingStream} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, isCameraEnable, userId, userAvatar, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} joined to the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -33,6 +33,7 @@ io.on('connect', socket => {
             userAvatar,
             userName,
             isMicrophoneEnable,
+            isCameraEnable,
             isScreenSharingStream,
           }
         },
@@ -45,6 +46,7 @@ io.on('connect', socket => {
         userAvatar,
         userName,
         isMicrophoneEnable,
+        isCameraEnable,
         isScreenSharingStream,
       }
     }
@@ -68,6 +70,12 @@ io.on('connect', socket => {
       socket.to(roomId).emit('USER_CHANGED_MICROPHONE_STATUS', { peerId, isMicrophoneEnable });
     })
 
+    socket.on('USER_CHANGED_CAMERA_STATUS', (changeCameraStatusData) => {
+      const { roomId, peerId, isCameraEnable } = changeCameraStatusData;
+      rooms[roomId].pearsList[peerId].isCameraEnable = isCameraEnable;
+      socket.to(roomId).emit('USER_CHANGED_CAMERA_STATUS', { peerId, isCameraEnable });
+    })
+
     socket.on('USER_STARTED_SCREEN_SHARING', ({roomId, userId}) => {
       rooms[roomId].shareScreenUserId = userId;
       socket.to(roomId).emit('USER_STARTED_SCREEN_SHARING', {peerId})
@@ -80,7 +88,7 @@ io.on('connect', socket => {
   })
 
   socket.on('STARTED_SCREEN_SHARING', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable, userId, userAvatar, isScreenSharingStream} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, isCameraEnable, userId, userAvatar, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} started screen sharing in the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -91,6 +99,7 @@ io.on('connect', socket => {
             userAvatar,
             userName,
             isMicrophoneEnable,
+            isCameraEnable,
             isScreenSharingStream,
           }
         },
@@ -103,6 +112,7 @@ io.on('connect', socket => {
         userAvatar,
         userName,
         isMicrophoneEnable,
+        isCameraEnable,
         isScreenSharingStream
       }
       console.warn('metadata:', rooms[roomId].pearsList[peerId]);
