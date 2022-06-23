@@ -22,13 +22,15 @@ io.on('connect', socket => {
   console.log(`SOCKET ${socket.id} CONNECTED`)
 
   socket.on('JOIN_ROOM', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable, isScreenSharingStream} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, userId, userAvatar, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} joined to the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
         pearsList: {
           [peerId]: {
             peerId,
+            userId,
+            userAvatar,
             userName,
             isMicrophoneEnable,
             isScreenSharingStream,
@@ -39,6 +41,8 @@ io.on('connect', socket => {
     } else {
       rooms[roomId].pearsList[peerId] = {
         peerId,
+        userId,
+        userAvatar,
         userName,
         isMicrophoneEnable,
         isScreenSharingStream,
@@ -46,7 +50,7 @@ io.on('connect', socket => {
     }
     socket.join(roomId)
     socket.to(roomId).emit('USER_JOINED', rooms[roomId].pearsList[peerId])
-    socket.emit('SETUP_SHARE_SCREEN_USER_ID', {peerId: rooms[roomId].shareScreenUserId})
+    // socket.emit('SETUP_SHARE_SCREEN_USER_ID', {peerId: rooms[roomId].shareScreenUserId})
     console.log(rooms)
 
     // socket.emit('GET_USERS', {
@@ -76,13 +80,15 @@ io.on('connect', socket => {
   })
 
   socket.on('STARTED_SCREEN_SHARING', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable, isScreenSharingStream} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, userId, userAvatar, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} started screen sharing in the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
         pearsList: {
           [peerId]: {
             peerId,
+            userId,
+            userAvatar,
             userName,
             isMicrophoneEnable,
             isScreenSharingStream,
@@ -93,10 +99,13 @@ io.on('connect', socket => {
     } else {
       rooms[roomId].pearsList[peerId] = {
         peerId,
+        userId,
+        userAvatar,
         userName,
         isMicrophoneEnable,
         isScreenSharingStream
       }
+      console.warn('metadata:', rooms[roomId].pearsList[peerId]);
     }
     socket.join(roomId);
     socket.to(roomId).emit('PEER_STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
