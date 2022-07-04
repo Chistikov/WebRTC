@@ -22,7 +22,7 @@ io.on('connect', socket => {
   console.log(`SOCKET ${socket.id} CONNECTED`)
 
   socket.on('JOIN_ROOM', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable, isCameraEnable, userId, userAvatar, isScreenSharingStream} = metadata;
+    const {roomId, peerId, userName, isMicrophoneEnable, isCameraEnable, userId, userAvatar, isTutor, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} joined to the room ${roomId}`);
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -32,6 +32,7 @@ io.on('connect', socket => {
             userId,
             userAvatar,
             userName,
+            isTutor,
             isMicrophoneEnable,
             isCameraEnable,
             isScreenSharingStream,
@@ -45,6 +46,7 @@ io.on('connect', socket => {
         userId,
         userAvatar,
         userName,
+        isTutor,
         isMicrophoneEnable,
         isCameraEnable,
         isScreenSharingStream,
@@ -88,35 +90,36 @@ io.on('connect', socket => {
   })
 
   socket.on('STARTED_SCREEN_SHARING', (metadata) => {
-    const {roomId, peerId, userName, isMicrophoneEnable, isCameraEnable, userId, userAvatar, isScreenSharingStream} = metadata;
+    const {roomId, peerId, userName, isTutor, isMicrophoneEnable, isCameraEnable, userId, userAvatar, isScreenSharingStream} = metadata;
     console.log(`User ${peerId} started screen sharing in the room ${roomId}`);
-    if (!rooms[roomId]) {
-      rooms[roomId] = {
-        pearsList: {
-          [peerId]: {
-            peerId,
-            userId,
-            userAvatar,
-            userName,
-            isMicrophoneEnable,
-            isCameraEnable,
-            isScreenSharingStream,
-          }
-        },
-        shareScreenUserId: null,
-      }
-    } else {
+    // if (!rooms[roomId]) {
+    //   rooms[roomId] = {
+    //     pearsList: {
+    //       [peerId]: {
+    //         peerId,
+    //         userId,
+    //         userAvatar,
+    //         userName,
+    //         isMicrophoneEnable,
+    //         isCameraEnable,
+    //         isScreenSharingStream,
+    //       }
+    //     },
+    //     shareScreenUserId: null,
+    //   }
+    // } else {
       rooms[roomId].pearsList[peerId] = {
         peerId,
         userId,
         userAvatar,
         userName,
+        isTutor,
         isMicrophoneEnable,
         isCameraEnable,
         isScreenSharingStream
       }
       console.warn('metadata:', rooms[roomId].pearsList[peerId]);
-    }
+    // }
     socket.join(roomId);
     socket.to(roomId).emit('PEER_STARTED_SCREEN_SHARING', rooms[roomId].pearsList[peerId]);
     console.log(rooms)
