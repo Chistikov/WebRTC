@@ -83,6 +83,10 @@ io.on('connect', socket => {
       socket.to(roomId).emit('USER_STARTED_SCREEN_SHARING', {peerId})
     })
 
+    socket.on('TUTOR_FINISHED_LESSON', ({roomId, userId}) => {
+      socket.to(roomId).emit('TUTOR_FINISHED_LESSON', {peerId})
+    })
+
     socket.on('disconnect', () => {
       console.log(`User ${peerId} leave the room ${roomId}`)
       leaveRoom(roomId, peerId)
